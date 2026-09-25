@@ -78,22 +78,30 @@ class DB {
   async updateUser(userId, name, email, password) {
     const connection = await this.getConnection();
     try {
-      const params = [];
+      const fields = [];
+      const values = [];
       if (password) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        params.push(`password='${hashedPassword}'`);
+        fields.push('password=?');
+        values.push(await bcrypt.hash(password, 10));
       }
       if (email) {
-        params.push(`email='${email}'`);
+        fields.push('email=?');
+        values.push(email);
       }
       if (name) {
-        params.push(`name='${name}'`);
+        fields.push('name=?');
+        values.push(name);
       }
-      if (params.length > 0) {
-        const query = `UPDATE user SET ${params.join(', ')} WHERE id=${userId}`;
-        await this.query(connection, query);
+      if (fields.length > 0) {
+        await this.query(connection, `UPDATE user SET ${fields.join(', ')} WHERE id=?`, [...values, userId]);
       }
-      return this.getUser(email, password);
+
+      // Look the user up by id since the request may not include their email.
+      const userResult = await this.query(connection, `SELECT email FROM user WHERE id=?`, [userId]);
+      if (userResult.length === 0) {
+        throw new StatusCodeError('unknown user', 404);
+      }
+      return this.getUser(userResult[0].email);
     } finally {
       connection.end();
     }
