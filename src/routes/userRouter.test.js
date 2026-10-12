@@ -80,6 +80,18 @@ test('diner cannot delete a user', async () => {
   expect(res.status).toBe(403);
 });
 
+test('admin can delete a user', async () => {
+  const adminToken = await login(await createAdminUser());
+  const res = await request(app).delete(`/api/user/${diner.id}`).set('Authorization', `Bearer ${adminToken}`);
+  expect(res.status).toBe(200);
+
+  // The deleted user's token no longer works and they can no longer log in.
+  const meRes = await request(app).get('/api/user/me').set('Authorization', `Bearer ${dinerToken}`);
+  expect(meRes.status).toBe(401);
+  const loginRes = await request(app).put('/api/auth').send({ email: diner.email, password: diner.password });
+  expect(loginRes.status).toBe(404);
+});
+
 test('delete user without a token fails', async () => {
   const res = await request(app).delete(`/api/user/${diner.id}`);
   expect(res.status).toBe(401);
