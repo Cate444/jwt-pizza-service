@@ -1,4 +1,5 @@
 const { app, request, randomName, expectValidJwt, createAdminUser, registerDiner, login } = require('../testHelpers');
+const { DB } = require('../database/database.js');
 
 let diner;
 let dinerToken;
@@ -96,6 +97,25 @@ test('admin deleting an unknown user gets 404', async () => {
   const adminToken = await login(await createAdminUser());
   const res = await request(app).delete('/api/user/99999999').set('Authorization', `Bearer ${adminToken}`);
   expect(res.status).toBe(404);
+});
+
+test('failed delete rolls back and keeps the user', async () => {
+  const adminToken = await login(await createAdminUser());
+  const realQuery = DB.query.bind(DB);
+  const spy = jest.spyOn(DB, 'query').mockImplementation((connection, sql, params) => {
+    if (sql.startsWith('DELETE FROM user ')) {
+      throw new Error('db failure');
+    }
+    return realQuery(connection, sql, params);
+  });
+
+  const res = await request(app).delete(`/api/user/${diner.id}`).set('Authorization', `Bearer ${adminToken}`);
+  spy.mockRestore();
+  expect(res.status).toBe(500);
+
+  // The user's login was restored by the rollback, so their token still works.
+  const meRes = await request(app).get('/api/user/me').set('Authorization', `Bearer ${dinerToken}`);
+  expect(meRes.status).toBe(200);
 });
 
 test('delete user without a token fails', async () => {
