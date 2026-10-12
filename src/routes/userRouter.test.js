@@ -75,10 +75,14 @@ test('admin updating an unknown user gets 404', async () => {
   expect(res.status).toBe(404);
 });
 
-test('delete user is not implemented', async () => {
+test('diner cannot delete a user', async () => {
   const res = await request(app).delete(`/api/user/${diner.id}`).set('Authorization', `Bearer ${dinerToken}`);
-  expect(res.status).toBe(200);
-  expect(res.body.message).toBe('not implemented'); // this is interesting. Why is it not implemented? Should I implement that? 
+  expect(res.status).toBe(403);
+});
+
+test('delete user without a token fails', async () => {
+  const res = await request(app).delete(`/api/user/${diner.id}`);
+  expect(res.status).toBe(401);
 });
 
 test('update only the name keeps the email', async () => {
