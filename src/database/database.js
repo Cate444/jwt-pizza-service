@@ -96,12 +96,18 @@ class DB {
         await this.query(connection, `UPDATE user SET ${fields.join(', ')} WHERE id=?`, [...values, userId]);
       }
 
-      // Look the user up by id since the request may not include their email.
-      const userResult = await this.query(connection, `SELECT email FROM user WHERE id=?`, [userId]);
+      // Look the user up by id, not email, since emails are not unique and could match another account.
+      const userResult = await this.query(connection, `SELECT * FROM user WHERE id=?`, [userId]);
       if (userResult.length === 0) {
         throw new StatusCodeError('unknown user', 404);
       }
-      return this.getUser(userResult[0].email);
+
+      const roleResult = await this.query(connection, `SELECT * FROM userRole WHERE userId=?`, [userId]);
+      const roles = roleResult.map((r) => {
+        return { objectId: r.objectId || undefined, role: r.role };
+      });
+
+      return { ...userResult[0], roles: roles, password: undefined };
     } finally {
       connection.end();
     }

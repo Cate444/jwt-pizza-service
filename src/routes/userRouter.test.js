@@ -54,6 +54,21 @@ test('admin can update another user', async () => {
   expect(res.body.user).toMatchObject({ id: diner.id, name: newName });
 });
 
+test('changing email to an existing email does not return the other user', async () => {
+  const admin = await createAdminUser();
+  const { user: attacker, token: attackerToken } = await registerDiner();
+  const res = await request(app)
+    .put(`/api/user/${attacker.id}`)
+    .set('Authorization', `Bearer ${attackerToken}`)
+    .send({ email: admin.email });
+  expect(res.status).toBe(200);
+  expect(res.body.user).toMatchObject({ id: attacker.id, roles: [{ role: 'diner' }] });
+
+  // The returned token must still belong to the attacker, not the admin.
+  const meRes = await request(app).get('/api/user/me').set('Authorization', `Bearer ${res.body.token}`);
+  expect(meRes.body).toMatchObject({ id: attacker.id, roles: [{ role: 'diner' }] });
+});
+
 test('delete user is not implemented', async () => {
   const res = await request(app).delete(`/api/user/${diner.id}`).set('Authorization', `Bearer ${dinerToken}`);
   expect(res.status).toBe(200);
