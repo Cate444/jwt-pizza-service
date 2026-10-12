@@ -92,6 +92,12 @@ test('admin can delete a user', async () => {
   expect(loginRes.status).toBe(404);
 });
 
+test('admin deleting an unknown user gets 404', async () => {
+  const adminToken = await login(await createAdminUser());
+  const res = await request(app).delete('/api/user/99999999').set('Authorization', `Bearer ${adminToken}`);
+  expect(res.status).toBe(404);
+});
+
 test('delete user without a token fails', async () => {
   const res = await request(app).delete(`/api/user/${diner.id}`);
   expect(res.status).toBe(401);
