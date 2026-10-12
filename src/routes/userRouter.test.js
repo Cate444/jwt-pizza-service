@@ -69,6 +69,12 @@ test('changing email to an existing email does not return the other user', async
   expect(meRes.body).toMatchObject({ id: attacker.id, roles: [{ role: 'diner' }] });
 });
 
+test('admin updating an unknown user gets 404', async () => {
+  const adminToken = await login(await createAdminUser());
+  const res = await request(app).put('/api/user/99999999').set('Authorization', `Bearer ${adminToken}`).send({ name: 'nobody' });
+  expect(res.status).toBe(404);
+});
+
 test('delete user is not implemented', async () => {
   const res = await request(app).delete(`/api/user/${diner.id}`).set('Authorization', `Bearer ${dinerToken}`);
   expect(res.status).toBe(200);
