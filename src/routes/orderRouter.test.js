@@ -1,4 +1,5 @@
 const { app, request, randomName, createAdminUser, registerDiner, login } = require('../testHelpers');
+const metrics = require('../metrics.js');
 
 let adminToken;
 let dinerToken;
@@ -41,6 +42,7 @@ test('create order and get orders', async () => {
     ok: true,
     json: async () => ({ reportUrl: 'http://report', jwt: 'factory.jwt.token' }),
   });
+  const pizzaPurchase = jest.spyOn(metrics, 'pizzaPurchase');
 
   const order = { franchiseId: 1, storeId: 1, items: [{ menuId: menuItem.id, description: menuItem.description, price: menuItem.price }] };
   const createRes = await request(app).post('/api/order').set('Authorization', `Bearer ${dinerToken}`).send(order);
@@ -48,6 +50,7 @@ test('create order and get orders', async () => {
   expect(createRes.body.order).toMatchObject(order);
   expect(createRes.body.jwt).toBe('factory.jwt.token');
   expect(global.fetch).toHaveBeenCalledTimes(1);
+  expect(pizzaPurchase).toHaveBeenCalledWith(true, expect.any(Number), menuItem.price, 1);
 
   const getRes = await request(app).get('/api/order').set('Authorization', `Bearer ${dinerToken}`);
   expect(getRes.status).toBe(200);
@@ -59,11 +62,13 @@ test('create order when factory fails', async () => {
     ok: false,
     json: async () => ({ reportUrl: 'http://report' }),
   });
+  const pizzaPurchase = jest.spyOn(metrics, 'pizzaPurchase');
 
   const order = { franchiseId: 1, storeId: 1, items: [{ menuId: menuItem.id, description: menuItem.description, price: menuItem.price }] };
   const res = await request(app).post('/api/order').set('Authorization', `Bearer ${dinerToken}`).send(order);
   expect(res.status).toBe(500);
   expect(res.body.message).toBe('Failed to fulfill order at factory');
+  expect(pizzaPurchase).toHaveBeenCalledWith(false, expect.any(Number), menuItem.price, 1);
 });
 
 test('create order without a token fails', async () => {
