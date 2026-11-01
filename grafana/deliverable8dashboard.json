@@ -43,12 +43,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "sum by (method) (rate(http_requests_total{source=\"$source\"}[1m])) * 60",
+                        "expr": "sum by (method) (rate(http_requests_total{source=\"jwt-pizza-service\"}[1m])) * 60",
                         "legendFormat": "{{method}}"
                       },
                       "version": "v0"
@@ -247,12 +247,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "max(active_users{source=\"$source\"})",
+                        "expr": "max(active_users{source=\"jwt-pizza-service\"})",
                         "legendFormat": "Active users"
                       },
                       "version": "v0"
@@ -332,12 +332,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "sum by (status) (rate(auth_attempts_total{source=\"$source\"}[1m])) * 60",
+                        "expr": "sum by (status) (rate(auth_attempts_total{source=\"jwt-pizza-service\"}[1m])) * 60",
                         "legendFormat": "{{status}}"
                       },
                       "version": "v0"
@@ -484,12 +484,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "max(cpu_usage_percent{source=\"$source\"})",
+                        "expr": "max(cpu_usage_percent{source=\"jwt-pizza-service\"})",
                         "legendFormat": "CPU"
                       },
                       "version": "v0"
@@ -503,12 +503,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "max(memory_usage_percent{source=\"$source\"})",
+                        "expr": "max(memory_usage_percent{source=\"jwt-pizza-service\"})",
                         "legendFormat": "Memory"
                       },
                       "version": "v0"
@@ -649,12 +649,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "sum(rate(pizzas_sold_total{source=\"$source\"}[1m])) * 60",
+                        "expr": "sum(rate(pizzas_sold_total{source=\"jwt-pizza-service\"}[1m])) * 60",
                         "legendFormat": "Pizzas sold"
                       },
                       "version": "v0"
@@ -771,12 +771,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "sum(rate(pizza_creation_failures_total{source=\"$source\"}[1m])) * 60",
+                        "expr": "sum(rate(pizza_creation_failures_total{source=\"jwt-pizza-service\"}[1m])) * 60",
                         "legendFormat": "Creation failures"
                       },
                       "version": "v0"
@@ -886,12 +886,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "sum(rate(pizza_revenue_total{source=\"$source\"}[1m])) * 60",
+                        "expr": "sum(rate(pizza_revenue_total{source=\"jwt-pizza-service\"}[1m])) * 60",
                         "legendFormat": "Revenue"
                       },
                       "version": "v0"
@@ -1004,12 +1004,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "max(service_latency_ms{source=\"$source\"})",
+                        "expr": "max(service_latency_ms{source=\"jwt-pizza-service\"})",
                         "legendFormat": "Service endpoint"
                       },
                       "version": "v0"
@@ -1023,12 +1023,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "${datasource}"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
                       "spec": {
-                        "expr": "max(pizza_creation_latency_ms{source=\"$source\"})",
+                        "expr": "max(pizza_creation_latency_ms{source=\"jwt-pizza-service\"})",
                         "legendFormat": "Pizza creation"
                       },
                       "version": "v0"
@@ -1275,7 +1275,7 @@
     "preload": false,
     "tags": [],
     "timeSettings": {
-      "autoRefresh": "5s",
+      "autoRefresh": "",
       "autoRefreshIntervals": [
         "5s",
         "10s",
@@ -1289,52 +1289,12 @@
         "1d"
       ],
       "fiscalYearStartMonth": 0,
-      "from": "now-6h",
+      "from": "2026-10-31T19:45:00.000Z",
       "hideTimepicker": false,
       "timezone": "browser",
-      "to": "now"
+      "to": "2026-10-31T21:30:00.000Z"
     },
     "title": "JWT Pizza Service Copy",
-    "variables": [
-      {
-        "kind": "DatasourceVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "grafanacloud-jumboyew1434-prom",
-            "value": "grafanacloud-prom"
-          },
-          "hide": "dontHide",
-          "includeAll": false,
-          "label": "Data source",
-          "multi": false,
-          "name": "datasource",
-          "options": [],
-          "pluginId": "prometheus",
-          "refresh": "onDashboardLoad",
-          "regex": "/grafanacloud-.*-prom/",
-          "skipUrlSync": false
-        }
-      },
-      {
-        "kind": "CustomVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "jwt-pizza-service",
-            "value": "jwt-pizza-service"
-          },
-          "hide": "dontHide",
-          "includeAll": false,
-          "label": "Environment",
-          "multi": false,
-          "name": "source",
-          "options": [],
-          "query": "jwt-pizza-service,jwt-pizza-service-dev",
-          "skipUrlSync": false,
-          "valuesFormat": "csv"
-        }
-      }
-    ]
+    "variables": []
   }
 }
