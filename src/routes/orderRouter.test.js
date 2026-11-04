@@ -1,5 +1,6 @@
 const { app, request, randomName, createAdminUser, registerDiner, login } = require('../testHelpers');
 const metrics = require('../metrics.js');
+const logger = require('../logger.js');
 
 let adminToken;
 let dinerToken;
@@ -51,6 +52,11 @@ test('create order and get orders', async () => {
   expect(createRes.body.jwt).toBe('factory.jwt.token');
   expect(global.fetch).toHaveBeenCalledTimes(1);
   expect(pizzaPurchase).toHaveBeenCalledWith(true, expect.any(Number), menuItem.price, 1);
+  expect(logger.factoryLogger).toHaveBeenCalledWith(
+    { diner: expect.objectContaining({ id: expect.any(Number) }), order: createRes.body.order },
+    { reportUrl: 'http://report', jwt: 'factory.jwt.token' },
+    true
+  );
 
   const getRes = await request(app).get('/api/order').set('Authorization', `Bearer ${dinerToken}`);
   expect(getRes.status).toBe(200);
@@ -69,6 +75,7 @@ test('create order when factory fails', async () => {
   expect(res.status).toBe(500);
   expect(res.body.message).toBe('Failed to fulfill order at factory');
   expect(pizzaPurchase).toHaveBeenCalledWith(false, expect.any(Number), menuItem.price, 1);
+  expect(logger.factoryLogger).toHaveBeenLastCalledWith(expect.objectContaining({ order: expect.any(Object) }), { reportUrl: 'http://report' }, false);
 });
 
 test('create order without a token fails', async () => {

@@ -32,3 +32,16 @@ test('requests are recorded in metrics', async () => {
   await request(app).get('/');
   expect(requestCount()).toBe(before + 1);
 });
+
+test('http logger middleware is installed', () => {
+  const logger = require('./logger.js');
+  expect(app._router.stack.some((layer) => layer.handle === logger.httpLogger)).toBe(true);
+});
+
+test('database queries and unhandled errors are logged', async () => {
+  const logger = require('./logger.js');
+  const res = await request(app).put('/api/auth').send({ email: 'nobody@jwt.com', password: 'wrong' });
+  expect(res.status).toBe(404);
+  expect(logger.dbLogger).toHaveBeenCalledWith(expect.stringContaining('SELECT * FROM user WHERE email=?'));
+  expect(logger.unhandledErrorLogger).toHaveBeenCalledWith(expect.objectContaining({ message: 'unknown user', statusCode: 404 }));
+});

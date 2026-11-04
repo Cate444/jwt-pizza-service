@@ -1,3 +1,4 @@
+jest.unmock('./logger.js');
 jest.mock('./config.js', () => ({
   logging: { source: 'jwt-pizza-service-test', endpointUrl: 'https://grafana.test/loki/api/v1/push', accountId: '123', apiKey: 'key' },
 }));
