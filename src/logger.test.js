@@ -69,3 +69,41 @@ test('log does nothing without logging config', () => {
   logger.log('info', 'http', {});
   expect(global.fetch).not.toHaveBeenCalled();
 });
+
+function simulateHttp({ statusCode = 200, headers = {}, body = undefined, resBody = '{}' } = {}) {
+  const EventEmitter = require('events');
+  const req = { method: 'PUT', originalUrl: '/api/auth', headers, body };
+  const res = new EventEmitter();
+  res.statusCode = statusCode;
+  const originalSend = jest.fn().mockReturnValue(res);
+  res.send = originalSend;
+  const next = jest.fn();
+  logger.httpLogger(req, res, next);
+  expect(next).toHaveBeenCalled();
+  expect(res.send(resBody)).toBe(res);
+  expect(originalSend).toHaveBeenCalledWith(resBody);
+  res.emit('finish');
+}
+
+test('httpLogger logs request and sanitized bodies', () => {
+  simulateHttp({ headers: { authorization: 'Bearer abc' }, body: { email: 'a@jwt.com', password: 'a' }, resBody: '{"user":{"id":1},"token":"t"}' });
+
+  const { labels, line } = sentLog();
+  expect(labels).toEqual({ source: 'jwt-pizza-service-test', level: 'info', type: 'http' });
+  expect(line).toEqual({
+    method: 'PUT',
+    path: '/api/auth',
+    statusCode: 200,
+    authorized: true,
+    reqBody: { email: 'a***@jwt.com', password: '*****' },
+    resBody: { user: { id: 1 }, token: '*****' },
+  });
+});
+
+test('httpLogger sets level from status code', () => {
+  simulateHttp({ statusCode: 404 });
+  simulateHttp({ statusCode: 500 });
+  const levels = global.fetch.mock.calls.map(([, options]) => JSON.parse(options.body).streams[0].stream.level);
+  expect(levels).toEqual(['warn', 'error']);
+  expect(sentLog().line.authorized).toBe(false);
+});

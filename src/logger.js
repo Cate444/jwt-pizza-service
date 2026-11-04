@@ -60,4 +60,32 @@ async function log(level, type, event) {
   }
 }
 
-module.exports = { sanitize, log };
+// Express middleware that logs each request once its response has been sent.
+function httpLogger(req, res, next) {
+  let resBody;
+  const send = res.send;
+  res.send = function (body) {
+    resBody = body;
+    res.send = send;
+    return send.call(this, body);
+  };
+  res.on('finish', () => {
+    log(levelFromStatus(res.statusCode), 'http', {
+      method: req.method,
+      path: req.originalUrl,
+      statusCode: res.statusCode,
+      authorized: !!req.headers.authorization,
+      reqBody: req.body,
+      resBody: sanitize(resBody),
+    });
+  });
+  next();
+}
+
+function levelFromStatus(statusCode) {
+  if (statusCode >= 500) return 'error';
+  if (statusCode >= 400) return 'warn';
+  return 'info';
+}
+
+module.exports = { sanitize, log, httpLogger };
