@@ -1,3 +1,5 @@
+const config = require('./config.js');
+
 const SECRET_KEYS = ['password', 'token', 'jwt', 'apikey', 'authorization'];
 const MASK = '*****';
 
@@ -35,4 +37,27 @@ function maskEmail(email) {
   return domain ? `${name[0]}***@${domain}` : MASK;
 }
 
-module.exports = { sanitize };
+// Sends one sanitized event to Grafana Loki, labeled so the dashboard can filter by level and type.
+async function log(level, type, event) {
+  const { source, endpointUrl, accountId, apiKey } = config.logging ?? {};
+  if (!endpointUrl) {
+    return;
+  }
+  const body = {
+    streams: [{ stream: { source, level, type }, values: [[`${Date.now()}000000`, JSON.stringify(sanitize(event))]] }],
+  };
+  try {
+    const res = await fetch(endpointUrl, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { Authorization: `Bearer ${accountId}:${apiKey}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      console.log('Failed to send log to Grafana', res.status, await res.text());
+    }
+  } catch (error) {
+    console.log('Error sending log', error);
+  }
+}
+
+module.exports = { sanitize, log };
