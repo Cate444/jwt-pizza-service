@@ -88,4 +88,19 @@ function levelFromStatus(statusCode) {
   return 'info';
 }
 
-module.exports = { sanitize, log, httpLogger };
+// Query parameters are left out because they can hold password hashes and tokens.
+function dbLogger(sql) {
+  log('info', 'db', { sql });
+}
+
+function factoryLogger(reqBody, resBody, ok) {
+  log(ok ? 'info' : 'error', 'factory', { reqBody, resBody });
+}
+
+// The stack is left out because it exposes internal file paths.
+function unhandledErrorLogger(err) {
+  const statusCode = err.statusCode ?? 500;
+  log(levelFromStatus(statusCode), 'unhandledError', { message: err.message, statusCode });
+}
+
+module.exports = { sanitize, log, httpLogger, dbLogger, factoryLogger, unhandledErrorLogger };

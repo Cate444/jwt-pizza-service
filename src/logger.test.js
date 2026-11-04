@@ -107,3 +107,32 @@ test('httpLogger sets level from status code', () => {
   expect(levels).toEqual(['warn', 'error']);
   expect(sentLog().line.authorized).toBe(false);
 });
+
+test('dbLogger logs the SQL statement', () => {
+  logger.dbLogger('SELECT * FROM menu');
+  const { labels, line } = sentLog();
+  expect(labels).toMatchObject({ level: 'info', type: 'db' });
+  expect(line).toEqual({ sql: 'SELECT * FROM menu' });
+});
+
+test('factoryLogger logs sanitized request and response bodies', () => {
+  logger.factoryLogger({ diner: { id: 1, email: 'd@jwt.com' }, order: { id: 2 } }, { jwt: 'j', reportUrl: 'r' }, true);
+  const { labels, line } = sentLog();
+  expect(labels).toMatchObject({ level: 'info', type: 'factory' });
+  expect(line).toEqual({ reqBody: { diner: { id: 1, email: 'd***@jwt.com' }, order: { id: 2 } }, resBody: { jwt: '*****', reportUrl: 'r' } });
+
+  logger.factoryLogger({}, {}, false);
+  expect(JSON.parse(global.fetch.mock.calls[1][1].body).streams[0].stream.level).toBe('error');
+});
+
+test('unhandledErrorLogger logs message and status without the stack', () => {
+  logger.unhandledErrorLogger(new Error('boom'));
+  const err = new Error('not found');
+  err.statusCode = 404;
+  logger.unhandledErrorLogger(err);
+
+  const logs = global.fetch.mock.calls.map(([, options]) => JSON.parse(options.body).streams[0]);
+  expect(logs[0].stream).toMatchObject({ level: 'error', type: 'unhandledError' });
+  expect(JSON.parse(logs[0].values[0][1])).toEqual({ message: 'boom', statusCode: 500 });
+  expect(logs[1].stream.level).toBe('warn');
+});
