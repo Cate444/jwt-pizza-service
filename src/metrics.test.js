@@ -64,6 +64,17 @@ test('counts total requests and requests by method', () => {
   expect(valueWith(payload, 'http_requests', 'method', 'DELETE')).toBe(1);
 });
 
+test('counts server errors but not client errors', () => {
+  simulateRequest('GET', '/api/order/menu', 200);
+  simulateRequest('PUT', '/api/auth', 404);
+  simulateRequest('POST', '/api/order', 500);
+  simulateRequest('POST', '/api/order', 503);
+
+  const [metric] = findMetrics(metrics.buildMetrics(), 'http_errors');
+  expect(pointValue(metric)).toBe(2);
+  expect(metric.sum.isMonotonic).toBe(true);
+});
+
 test('counters are cumulative sums tagged with the configured source', () => {
   simulateRequest('GET', '/');
   const [metric] = findMetrics(metrics.buildMetrics(), 'http_requests');

@@ -8,6 +8,7 @@ const AGGREGATION_TEMPORALITY_CUMULATIVE = 2;
 // Counters are cumulative for the life of the process; Grafana turns them into per-minute rates.
 const startTimeUnixNano = toUnixNano(Date.now());
 const requests = { total: 0, GET: 0, PUT: 0, POST: 0, DELETE: 0 };
+let serverErrors = 0; // responses with a 5xx status
 const auth = { success: 0, failure: 0 };
 const pizzas = { sold: 0, failures: 0, revenue: 0 };
 const activeUsers = new Map(); // userId -> last time seen
@@ -23,6 +24,9 @@ function requestTracker(req, res, next) {
     requests.total++;
     if (TRACKED_METHODS.includes(req.method)) {
       requests[req.method]++;
+    }
+    if (res.statusCode >= 500) {
+      serverErrors++;
     }
     serviceLatency.sum += Date.now() - start;
     serviceLatency.count++;
@@ -91,6 +95,7 @@ function buildMetrics() {
 
   sum('http_requests', requests.total, { method: 'ALL' });
   TRACKED_METHODS.forEach((method) => sum('http_requests', requests[method], { method }));
+  sum('http_errors', serverErrors);
 
   sum('auth_attempts', auth.success, { status: 'success' });
   sum('auth_attempts', auth.failure, { status: 'failure' });
