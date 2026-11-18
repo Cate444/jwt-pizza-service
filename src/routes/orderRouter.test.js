@@ -82,3 +82,57 @@ test('create order without a token fails', async () => {
   const res = await request(app).post('/api/order').send({});
   expect(res.status).toBe(401);
 });
+
+describe('chaos', () => {
+  const order = () => ({ franchiseId: 1, storeId: 1, items: [{ menuId: menuItem.id, description: menuItem.description, price: menuItem.price }] });
+
+  afterEach(async () => {
+    await request(app).put('/api/order/chaos/false').set('Authorization', `Bearer ${adminToken}`);
+  });
+
+  test('admin can enable and disable chaos', async () => {
+    const onRes = await request(app).put('/api/order/chaos/true').set('Authorization', `Bearer ${adminToken}`);
+    expect(onRes.status).toBe(200);
+    expect(onRes.body).toEqual({ chaos: true });
+
+    const offRes = await request(app).put('/api/order/chaos/false').set('Authorization', `Bearer ${adminToken}`);
+    expect(offRes.status).toBe(200);
+    expect(offRes.body).toEqual({ chaos: false });
+  });
+
+  test('diner cannot change chaos state', async () => {
+    await request(app).put('/api/order/chaos/true').set('Authorization', `Bearer ${adminToken}`);
+    const res = await request(app).put('/api/order/chaos/false').set('Authorization', `Bearer ${dinerToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ chaos: true });
+  });
+
+  test('toggling chaos without a token fails', async () => {
+    const res = await request(app).put('/api/order/chaos/true');
+    expect(res.status).toBe(401);
+  });
+
+  test('order fails when chaos strikes', async () => {
+    jest.spyOn(global, 'fetch');
+    await request(app).put('/api/order/chaos/true').set('Authorization', `Bearer ${adminToken}`);
+    jest.spyOn(Math, 'random').mockReturnValue(0.1);
+
+    const res = await request(app).post('/api/order').set('Authorization', `Bearer ${dinerToken}`).send(order());
+    expect(res.status).toBe(500);
+    expect(res.body.message).toBe('Chaos monkey');
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('order succeeds when chaos misses', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ reportUrl: 'http://report', jwt: 'factory.jwt.token' }),
+    });
+    await request(app).put('/api/order/chaos/true').set('Authorization', `Bearer ${adminToken}`);
+    jest.spyOn(Math, 'random').mockReturnValue(0.9);
+
+    const res = await request(app).post('/api/order').set('Authorization', `Bearer ${dinerToken}`).send(order());
+    expect(res.status).toBe(200);
+    expect(res.body.jwt).toBe('factory.jwt.token');
+  });
+});
