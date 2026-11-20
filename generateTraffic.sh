@@ -1,13 +1,20 @@
 #!/bin/bash
 # Simulates user traffic against a JWT Pizza Service so every Grafana metric has data.
 # Requires the data from generatePizzaData.sh (diner d@jwt.com and a franchise with a store).
-# Usage: ./generateTraffic.sh <host>   e.g. ./generateTraffic.sh http://localhost:3000
+# Usage: ./generateTraffic.sh <host> [--no-failures]   e.g. ./generateTraffic.sh http://localhost:3000
+# --no-failures skips the intentionally failing 21-pizza orders so only real problems trigger alerts.
 # Press Ctrl+C to stop.
 
 host=$1
 if [ -z "$host" ]; then
-  echo "Usage: $0 <host>"
+  echo "Usage: $0 <host> [--no-failures]"
   exit 1
+fi
+
+noFailures=false
+if [ "$2" = "--no-failures" ]; then
+  noFailures=true
+  echo "skipping failing 21-pizza orders"
 fi
 
 # Look up a franchise, store, and menu item to order rather than assuming ids.
@@ -76,13 +83,15 @@ while true; do
 done &
 
 # A diner who orders too many pizzas so the factory fails (creation failures, slow pizza latency).
-while true; do
-  token=$(login)
-  status=$(curl -s -o /dev/null -w "%{http_code}" -X POST $host/api/order -H 'Content-Type: application/json' -d "$(order 21)" -H "Authorization: Bearer $token")
-  echo "bought 21 pizzas: $status"
-  sleep 5
-  logout $token
-  sleep 115
-done &
+if [ "$noFailures" = false ]; then
+  while true; do
+    token=$(login)
+    status=$(curl -s -o /dev/null -w "%{http_code}" -X POST $host/api/order -H 'Content-Type: application/json' -d "$(order 21)" -H "Authorization: Bearer $token")
+    echo "bought 21 pizzas: $status"
+    sleep 5
+    logout $token
+    sleep 115
+  done &
+fi
 
 wait
